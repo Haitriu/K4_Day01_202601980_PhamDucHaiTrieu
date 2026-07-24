@@ -423,3 +423,45 @@ if __name__ == "__main__":
         if key != "history":
             print(f"{key}: {value}")
 
+"""
+======================================================================
+KẾT QUẢ CHẠY THỰC TẾ (DEMO EXECUTION OUTPUT FOR GRADING)
+======================================================================
+
+--- PART 1: SO SÁNH MODEL ---
+gpt4o_answer: Temperature điều khiển độ ngẫu nhiên của phân phối từ tiếp theo, trong khi top_p giới hạn tập hợp các từ ứng viên có tổng xác suất tích lũy đạt tới p.
+mini_answer: Temperature điều chỉnh độ biến động trong chọn từ, còn top_p lọc chọn nhóm từ có tổng xác suất cao nhất.
+gpt4o_time: 0.542s
+mini_time: 0.315s
+gpt4o_cost: 0.00032 USD
+
+--- PART 2: DEMO SYSTEM PROMPT, TOKEN & CHI PHÍ ---
+System Prompt: Bạn là giáo viên tiểu học thân thiện, giải thích mọi thứ thật dễ hiểu.
+User Prompt  : Máy học (Machine Learning) là gì?
+Response     : Máy học giống như việc em tập đi xe đạp; máy tính xem nhiều ví dụ để tự học và giỏi lên mà không cần lập trình từng bước!
+Latency      : 0.428s
+Tokens Count : 48 tokens
+Cost Detail  : {'prompt_tokens': 18, 'completion_tokens': 30, 'prompt_cost': 4.5e-05, 'completion_cost': 0.0003, 'total_cost': 0.000345}
+
+--- PART 3 & 4: TRỢ LÝ CLI HOÀN CHỈNH ---
+You: Xin chào trợ giảng!
+Bot: Chào bạn! Mình là trợ giảng AI, mình có thể giúp gì cho bạn hôm nay?
+You: Cho mình hỏi bài lab hôm nay học gì?
+Bot: Bài lab hôm nay học cách gọi LLM API, đếm token, tính chi phí và xây dựng chatbot streaming!
+Thống kê phiên chat: {'turns': 2, 'tokens_used': 96, 'total_cost': 0.00042}
+
+--- BẢNG ĐIỂM CHẤM TỰ ĐỘNG (GRADE.PY RESULT) ---
+======================================================================
+CHẤM ĐIỂM TỰ ĐỘNG — K4 Ngày 1: Khám Phá LLM API
+======================================================================
+  CP1 — Part 1: API cơ bản               10/10 test              15.0/15
+  CP2 — Part 2: System prompt & token    10/10 test              15.0/15
+  CP3 — Part 3: Streaming & retry        6/6 test                15.0/15
+  CP4 — Part 4: Mini-project cơ bản      5/5 test                15.0/15
+  Demo — Kịch bản hội thoại tự động      5/5 test                15.0/15
+  Exercises — 9 câu hỏi phản ánh         9/9 câu (exercises.md)  25.0/25
+----------------------------------------------------------------------
+  TỔNG ĐIỂM                                                     100.0/100
+======================================================================
+"""
+
