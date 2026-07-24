@@ -1,190 +1,196 @@
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-2e0aaae1b6195c2367325f4f02e2d04e9abb55f0b24a779b69b11b9e10269abc.svg)](https://classroom.github.com/online_ide?assignment_repo_id=24261354&assignment_repo_type=AssignmentRepo)
-# Student Guide: Nền tảng LLM API (Step-by-Step Walkthrough)
+# K4 — Ngày 1: Khám Phá LLM API (14h00–18h00)
 
-> [!NOTE]
-> Tài liệu này được thiết kế để hỗ trợ bạn hoàn thành bài Lab 01 một cách nhanh chóng nhất. Hãy sử dụng nó làm cẩm nang khi triển khai các hàm trong `template.py`.
+Xem hướng dẫn step-by-step ở website: https://codelabs.vlearn.dev/codelab/day1-lab-llm-api-foundation 
+Đăng nhập bằng tài khoản vlearn đã được kích hoạt:
+- Tên tài khoản: mail vinuni
+- Mật khẩu: mã số sinh viên
 
----
+## Mục Tiêu
 
-## 🛠️ 1. Khởi tạo Môi trường & Thiết lập API Keys
+Sau buổi lab này, bạn sẽ:
+- Gọi được OpenAI Chat Completions API và hiểu các tham số sinh text quan trọng (temperature, top_p, max_tokens)
+- So sánh GPT-4o và GPT-4o-mini về chất lượng, độ trễ và chi phí
+- Dùng system prompt để định hình persona của model
+- Đếm token bằng tiktoken và tính chi phí chính xác theo giá input/output
+- Xây dựng chatbot streaming có lịch sử hội thoại và retry chịu lỗi
+- Ghép tất cả thành một trợ lý CLI hoàn chỉnh (mini-project)
 
-### 🔹 1.1 Khởi tạo môi trường ảo (venv) & Cài đặt thư viện
-Để tránh xung đột thư viện giữa các dự án, bạn nên sử dụng môi trường ảo (`.venv`):
-
-1. **Khởi tạo Virtual Environment (`.venv`):**
-   * **Windows/macOS/Linux**:
-     ```bash
-     python -m venv .venv
-     ```
-
-2. **Kích hoạt môi trường ảo (Activate):**
-   * **Windows (PowerShell)**:
-     ```powershell
-     .venv\Scripts\Activate.ps1
-     ```
-   * **Windows (CMD)**:
-     ```cmd
-     .venv\Scripts\activate.bat
-     ```
-   * **macOS/Linux**:
-     ```bash
-     source .venv/bin/activate
-     ```
-
-3. **Cài đặt thư viện từ [requirements.txt](file:///j:/VinUniCodelab/VinUni_Codelab_Day01/requirements.txt):**
-   ```bash
-   pip install -r requirements.txt
-   ```
+**Cách làm bài:** mở [LAB_GUIDE.md](LAB_GUIDE.md) và làm theo từng bước —
+mỗi block có checkpoint theo giờ để bạn tự biết mình đang đúng tiến độ.
 
 ---
 
-### 🔹 1.2 Hướng dẫn lấy API Keys
+## Cài Đặt
 
-* **Google Gemini API Key (GEMINI_API_KEY):**
-  1. Truy cập trang web [Google AI Studio](https://aistudio.google.com/).
-  2. Đăng nhập bằng tài khoản Google của bạn.
-  3. Bấm vào nút **"Get API key"** (ở menu bên trái hoặc góc trên).
-  4. Chọn **"Create API key"** và tạo khóa cho dự án mới hoặc dự án hiện có.
-  5. Sao chép API key đã tạo (nó sẽ có dạng bắt đầu bằng `AIzaSy...`).
+### Yêu cầu
+- Python 3.10+
+- API key để chạy thủ công (toàn bộ kiểm thử dùng mock, không cần key):
+  - **Luồng chính — OpenAI API key**: so sánh GPT-4o vs GPT-4o-mini như đề bài gốc
+  - **Luồng thay thế — Google Gemini (miễn phí)**, dùng khi không có key OpenAI:
+    lấy key ~2 phút tại [aistudio.google.com/apikey](https://aistudio.google.com/apikey),
+    so sánh cặp `gemini-2.5-flash` vs `gemini-2.5-flash-lite` —
+    xem [LAB_GUIDE.md — Phụ lục B](LAB_GUIDE.md#phụ-lục-b--luồng-thay-thế-google-gemini-khi-không-có-key-openai)
+  - (Lựa chọn khác: NVIDIA NIM miễn phí — [Phụ lục C](LAB_GUIDE.md#phụ-lục-c--lựa-chọn-khác-nvidia-nim-miễn-phí))
 
-* **OpenAI API Key (OPENAI_API_KEY):**
-  1. Truy cập [OpenAI API Keys Platform](https://platform.openai.com/api-keys).
-  2. Đăng nhập/Đăng ký tài khoản OpenAI của bạn.
-  3. Bấm vào nút **"Create new secret key"**.
-  4. Đặt tên gợi nhớ cho key (ví dụ: `VinUni_Lab1`) và chọn quyền hạn (mặc định là All).
-  5. Sao chép API key đã tạo (nó sẽ có dạng bắt đầu bằng `sk-proj-...`).
-  > [!WARNING]
-  > Key OpenAI chỉ hiển thị duy nhất **một lần** ngay khi tạo. Hãy lưu trữ key an toàn.
+### Tạo môi trường ảo & cài thư viện
 
----
+**macOS / Linux:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-### 🔹 1.3 Thiết lập Biến môi trường trực tiếp (Environment Variables)
+**Windows (PowerShell):**
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
 
-Bạn có thể thiết lập biến môi trường trực tiếp từ terminal (áp dụng cho phiên làm việc hiện tại) bằng các lệnh sau:
+> Nếu PowerShell chặn script, chạy một lần
+> `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`,
+> hoặc dùng Command Prompt với lệnh `.venv\Scripts\activate.bat`.
 
-* **Windows (PowerShell):**
-  ```powershell
-  $env:OPENAI_API_KEY="sk-proj-your-openai-key-here"
-  $env:GEMINI_API_KEY="AIzaSy-your-gemini-key-here"
-  ```
+### Thiết lập API key qua file `.env`
 
-* **Windows (CMD):**
-  ```cmd
-  set OPENAI_API_KEY=sk-proj-your-openai-key-here
-  set GEMINI_API_KEY=AIzaSy-your-gemini-key-here
-  ```
+Chỉ cần cho phần chạy thật — pytest không cần key.
 
-* **macOS/Linux (Terminal):**
-  ```bash
-  export OPENAI_API_KEY="sk-proj-your-openai-key-here"
-  export GEMINI_API_KEY="AIzaSy-your-gemini-key-here"
-  ```
+```bash
+cp .env.example .env             # Windows: copy .env.example .env
+```
 
-> [!TIP]
-> Để tránh việc phải nhập lại lệnh thiết lập mỗi khi tắt terminal, bạn có thể tạo một file [.env](file:///j:/VinUniCodelab/VinUni_Codelab_Day01/.env) đặt ở thư mục gốc của project (sử dụng mẫu từ [.env.example](file:///j:/VinUniCodelab/VinUni_Codelab_Day01/.env.example)) và sử dụng thư viện `python-dotenv` để load tự động trong code.
+Mở `.env` và thay `sk-your-key-here` bằng key thật.
 
----
-
-## 🚀 2. Lộ trình triển khai (Recommended Flow)
-
-Để hoàn thành bài lab một cách khoa học, hãy đi theo trình tự sau:
-
-    A[Task 1: call_openai] --> B[Task 2: call_gemini]
-    B --> C[Task 3: call_anthropic]
-    C --> D[Task 4: compare_models]
-    D --> E[Task 5: streaming_chatbot]
-    E --> F[Bonus A: retry_with_backoff]
-    F --> G[Bonus B/C: batch & table]
-
+Code trong `template.py` đã gọi sẵn `load_dotenv()` nên key trong `.env`
+được nạp tự động. File `.env` đã nằm trong `.gitignore` — **tuyệt đối không
+commit hoặc chia sẻ API key**.
 
 ---
 
-## 🛠️ 3. Hướng dẫn chi tiết từng nhiệm vụ
+## Lịch Trình & Checkpoint
 
-### 🔹 Task 1: `call_openai` (OpenAI API)
-* **SDK cần dùng:** `from openai import OpenAI`
-* **Cách khởi tạo:** `client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))`
-* **Hàm gọi:** `client.chat.completions.create(...)`
-* **Tham số:** 
-  * `model`: chuỗi tên model (`gpt-4o` hoặc `gpt-4o-mini`).
-  * `messages`: dạng danh sách hội thoại `[{"role": "user", "content": prompt}]`.
-  * `temperature`, `top_p`, `max_tokens`.
-* **Đo thời gian (Latency):** Dùng thư viện `time`:
-  ```python
-  start = time.time()
-  # call API
-  latency = time.time() - start
-  ```
-* **Lấy Token Usage:** 
-  ```python
-  input_tokens = response.usage.prompt_tokens
-  output_tokens = response.usage.completion_tokens
-  ```
+| Giờ | Hoạt động | Checkpoint |
+|-----|-----------|------------|
+| 14h00–15h00 | Mở đầu + setup môi trường | **CP0:** `pytest tests/ -v` chạy được (tests fail là đúng — bạn chưa code) |
+| 15h00–15h40 | **Block 1** — API cơ bản: Task 1.1, 1.2, 1.3 | **CP1 (15h40):** `pytest tests/test_part1.py -v` |
+| 15h40–16h20 | **Block 2** — System prompt & token: Task 2.1, 2.2, 2.3 | **CP2 (16h20):** `pytest tests/test_part2.py -v` |
+| 16h20–16h30 | ☕ Giải lao | — |
+| 16h30–17h10 | **Block 3** — Streaming & retry: Task 3.1, 3.2 | **CP3 (17h10):** `pytest tests/test_part3.py -v` |
+| 17h10–17h50 | **Block 4** — Mini-project: `run_assistant` | **CP4 (17h50):** `pytest tests/test_part4.py -v` |
+| 17h50–18h00 | Wrap-up: hoàn thiện `exercises.md`, chấm điểm, nộp bài | `python grade.py` |
+
+Chi tiết từng bước của mỗi block: xem [LAB_GUIDE.md](LAB_GUIDE.md).
 
 ---
 
-### 🔹 Task 2: `call_gemini` (Google Gemini 2.5) — Trọng tâm chính!
-Chúng ta sẽ sử dụng SDK mới nhất của Google (`google-genai`):
-* **SDK cần dùng:** `from google import genai` và `from google.genai import types`
-* **Cách khởi tạo:** `client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))`
-* **Hàm gọi:** `client.models.generate_content(...)`
-* **Cấu hình tham số (Configuration):**
-  ```python
-  config = types.GenerateContentConfig(
-      temperature=temperature,
-      top_p=top_p,
-      max_output_tokens=max_tokens
-  )
-  response = client.models.generate_content(
-      model=model,
-      contents=prompt,
-      config=config
-  )
-  ```
-* **Lấy Token Usage:**
-  ```python
-  input_tokens = response.usage_metadata.prompt_token_count
-  output_tokens = response.usage_metadata.candidates_token_count
-  ```
+## Cấu Trúc Thư Mục
+
+```
+K4-Day01-LLM-API-Exploration/
+├── README.md            # File này — tổng quan, lịch trình, chấm điểm
+├── LAB_GUIDE.md         # Hướng dẫn chi tiết từng bước + checkpoint
+├── exercises.md         # Phiếu bài tập & phản ánh (9 câu)
+├── template.py          # Nơi bạn viết code — điền các TODO
+├── grade.py             # Chấm điểm tự động
+├── requirements.txt
+└── tests/
+    ├── test_part1.py    # Checkpoint 1
+    ├── test_part2.py    # Checkpoint 2
+    ├── test_part3.py    # Checkpoint 3
+    └── test_part4.py    # Checkpoint 4 + Demo tự động
+```
 
 ---
 
-### 🔹 Task 5: `streaming_chatbot` (Gemini Streaming + History)
-Streaming giúp tạo trải nghiệm người dùng mượt mà giống như ChatGPT (chữ chạy đến đâu hiển thị đến đó).
-* **Streaming logic:**
-  ```python
-  response_stream = client.models.generate_content_stream(
-      model="gemini-2.5-flash",
-      contents=formatted_history
-  )
-  for chunk in response_stream:
-      print(chunk.text, end="", flush=True)
-  ```
-* **Lịch sử hội thoại (History Management):** 
-  Giới hạn lịch sử ở 3 lượt hội thoại gần nhất (tương đương 6 tin nhắn).
-  ```python
-  # Cắt lịch sử nếu quá dài
-  history = history[-6:]
-  ```
+## Chạy Kiểm Thử
+
+```bash
+# Từng checkpoint
+pytest tests/test_part1.py -v
+
+# Toàn bộ
+pytest tests/ -v
+```
+
+Tất cả kiểm thử dùng `unittest.mock` — **không cần API key thật**.
 
 ---
 
-## 🆘 4. Giải quyết các lỗi thường gặp (Troubleshooting)
+## Chấm Điểm Tự Động (100 điểm)
 
-### 🔴 Lỗi `ModuleNotFoundError: No module named 'google'`
-* **Nguyên nhân:** Chưa cài đặt thư viện Google GenAI SDK.
-* **Cách khắc phục:** Chạy `pip install google-genai` trong terminal của bạn.
+```bash
+python grade.py
+```
 
-### 🔴 Lỗi `AuthenticationError` hoặc `API Key Not Found`
-* **Nguyên nhân:** API key chưa được thiết lập vào biến môi trường.
-* **Cách khắc phục:**
-  * **MacOS/Linux:** `export GEMINI_API_KEY="AIzaSy..."`
-  * **Windows (PowerShell):** `$env:GEMINI_API_KEY="AIzaSy..."`
-  * **Windows (CMD):** `set GEMINI_API_KEY=AIzaSy...`
+| Tiêu chí | Cách chấm | Điểm |
+|----------|-----------|------|
+| CP1 — Part 1: API cơ bản | `tests/test_part1.py` | 15 |
+| CP2 — Part 2: System prompt & token | `tests/test_part2.py` | 15 |
+| CP3 — Part 3: Streaming & retry | `tests/test_part3.py` | 15 |
+| CP4 — Part 4: Mini-project cơ bản | `tests/test_part4.py -k Basic` | 15 |
+| Demo — kịch bản hội thoại tự động | `tests/test_part4.py -k Scenario` | 15 |
+| `exercises.md` — 9 câu phản ánh | Đếm số câu đã trả lời | 25 |
+| **Tổng** | | **100** |
 
-### 🔴 Lỗi `RateLimitError`
-* **Nguyên nhân:** Bạn gửi quá nhiều request trong một khoảng thời gian ngắn trên tài khoản Free.
-* **Cách khắc phục:** Triển khai **Task Bonus A (`retry_with_backoff`)** để tự động thử lại sau vài giây!
+Điểm mỗi nhóm tỷ lệ với số test pass, nên **làm được đến đâu có điểm đến đó**.
+Điểm exercises là điểm hoàn thành; chất lượng nội dung giảng viên có thể
+điều chỉnh sau.
+
+**Chấm điểm không phụ thuộc luồng bạn dùng** — OpenAI (luồng chính) hay
+Gemini (luồng thay thế) đều được chấm bằng cùng một bộ test mock, điểm
+giống hệt nhau. `grade.py` in ra luồng đang cấu hình trong `.env` của bạn
+ở đầu bảng điểm để đối chiếu.
 
 ---
-> **💡 Vibe Coding Tip:** Hãy tận dụng Cursor hoặc Copilot bằng cách cung cấp cho nó ngữ cảnh của file `student_guide.md` và `template.py` để viết code nháp nhanh chóng, sau đó kiểm tra và hoàn thiện bằng tay!
+
+## Hướng Dẫn Nộp Bài — Link GitHub trên vlearn
+
+K4 **không nộp file zip** — bạn push bài làm lên GitHub cá nhân và nộp link
+repo vào vlearn.
+
+```bash
+# 1. Tạo folder solution và copy bài làm
+mkdir -p solution
+cp template.py solution/solution.py
+cp exercises.md solution/exercises.md
+
+# 2. Chấm thử lần cuối (grade.py sẽ ưu tiên chấm folder solution)
+python grade.py
+
+# 3. Tạo repo MỚI trên github.com, tên theo quy ước DAY01-MSSV-HoVaTen
+#    (họ tên viết liền không dấu — ví dụ: DAY01-21001234-NguyenVanAn), rồi push:
+git init                          # bỏ qua nếu folder đã là git repo
+git add .
+git commit -m "Nộp bài lab 1"
+git branch -M main
+git remote add origin https://github.com/<tài khoản của bạn>/DAY01-<MSSV>-<HoVaTen>.git
+git push -u origin main
+
+# 4. Nộp LINK repo (https://github.com/<tài khoản>/DAY01-<MSSV>-<HoVaTen>) vào vlearn
+```
+
+**Cấu trúc repo khi nộp (ví dụ với DAY01-21001234-NguyenVanAn):**
+```
+DAY01-21001234-NguyenVanAn/
+├── solution/
+│   ├── solution.py      # template.py đã hoàn thiện
+│   └── exercises.md     # 9 câu đã trả lời
+├── template.py, tests/, grade.py, ...   # giữ nguyên từ repo lab
+```
+
+⚠️ **Kiểm tra sau khi push:** mở repo trên GitHub, xác nhận **không thấy file
+`.env`** (đã có `.gitignore` chặn, nhưng hãy tự kiểm tra — lộ key là mất tiền
+thật). Repo để Public, hoặc Private và mời tài khoản GitHub của giảng viên.
+
+---
+
+## Danh Sách Kiểm Tra Nộp Bài
+
+- [ ] `pytest tests/ -v` — các checkpoint đều pass
+- [ ] `python grade.py` — xem điểm, mục tiêu ≥ 75/100
+- [ ] `solution/exercises.md` — cả 9 câu đã trả lời
+- [ ] `solution/solution.py` — bản code cuối cùng
+- [ ] Repo đặt tên đúng quy ước `DAY01-MSSV-HoVaTen` (viết liền, không dấu)
+- [ ] Đã push lên GitHub, repo KHÔNG chứa file `.env`
+- [ ] Đã nộp link repo vào vlearn trước 18h00
