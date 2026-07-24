@@ -54,25 +54,21 @@ def call_openai(
 ) -> tuple[str, float]:
     """
     Gọi OpenAI Chat Completions API, trả về nội dung phản hồi + độ trễ.
-
-    Args:
-        prompt:      Tin nhắn của người dùng.
-        model:       Model OpenAI sử dụng (mặc định: gpt-4o).
-        temperature: Độ ngẫu nhiên khi lấy mẫu (0.0 – 2.0).
-        top_p:       Ngưỡng nucleus sampling.
-        max_tokens:  Số token tối đa được sinh ra.
-
-    Returns:
-        Tuple (response_text: str, latency_seconds: float).
-
-    Gợi ý:
-        from openai import OpenAI            # import BÊN TRONG hàm
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        # đo thời gian bằng time.time() trước và sau lời gọi API
     """
-    # TODO: import OpenAI, tạo client, gọi chat.completions.create,
-    #       đo start/end time, trả về (response_text, latency)
-    raise NotImplementedError("Implement call_openai")
+    from openai import OpenAI
+
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    start_time = time.time()
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens,
+    )
+    latency = time.time() - start_time
+    response_text = response.choices[0].message.content or ""
+    return response_text, latency
 
 
 # ---------------------------------------------------------------------------
@@ -86,15 +82,14 @@ def call_openai_mini(
 ) -> tuple[str, float]:
     """
     Gọi API với model gpt-4o-mini — nhanh hơn và rẻ hơn.
-
-    Returns:
-        Tuple (response_text: str, latency_seconds: float).
-
-    Gợi ý:
-        Tái sử dụng call_openai() với model=OPENAI_MINI_MODEL — 1 dòng code.
     """
-    # TODO: gọi call_openai với model=OPENAI_MINI_MODEL
-    raise NotImplementedError("Implement call_openai_mini")
+    return call_openai(
+        prompt,
+        model=OPENAI_MINI_MODEL,
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -103,26 +98,22 @@ def call_openai_mini(
 def compare_models(prompt: str) -> dict:
     """
     Gọi cả hai model với cùng một prompt và trả về dict so sánh.
-
-    Returns:
-        Dict với các key:
-            - "gpt4o_answer":      str
-            - "mini_answer":       str
-            - "gpt4o_time":       float
-            - "mini_time":        float
-            - "gpt4o_cost": float  (USD ước tính cho phản hồi)
-
-    Gợi ý:
-        pricing = PRICING_PER_1K_TOKENS.get(
-            OPENAI_MODEL, PRICING_PER_1K_TOKENS["gpt-4o"]
-        )
-        cost = (len(response.split()) / 0.75) / 1000 * pricing["output"]
-        (0.75 từ ≈ 1 token — ước lượng thô; Part 2 sẽ tính chính xác hơn.
-         Dùng .get để lấy đúng giá model đang chạy — gpt-4o, gemini...;
-         model không có trong bảng thì lấy giá gpt-4o làm tham chiếu)
     """
-    # TODO: gọi call_openai và call_openai_mini, ghép dict kết quả
-    raise NotImplementedError("Implement compare_models")
+    gpt4o_answer, gpt4o_time = call_openai(prompt)
+    mini_answer, mini_time = call_openai_mini(prompt)
+
+    pricing = PRICING_PER_1K_TOKENS.get(
+        OPENAI_MODEL, PRICING_PER_1K_TOKENS["gpt-4o"]
+    )
+    gpt4o_cost = (len(gpt4o_answer.split()) / 0.75) / 1000 * pricing["output"]
+
+    return {
+        "gpt4o_answer": gpt4o_answer,
+        "mini_answer": mini_answer,
+        "gpt4o_time": gpt4o_time,
+        "mini_time": mini_time,
+        "gpt4o_cost": gpt4o_cost,
+    }
 
 
 # ===========================================================================
@@ -140,25 +131,25 @@ def chat_with_system_prompt(
     max_tokens: int = 256,
 ) -> tuple[str, float]:
     """
-    Gọi API với MESSAGES gồm 2 phần: system prompt (định hình vai trò/persona
-    của model) và user prompt (câu hỏi thật).
-
-    Args:
-        system_prompt: Chỉ dẫn vai trò, ví dụ "Bạn là giáo viên tiểu học,
-                       giải thích mọi thứ thật đơn giản."
-        user_prompt:   Tin nhắn của người dùng.
-
-    Returns:
-        Tuple (response_text: str, latency_seconds: float).
-
-    Gợi ý:
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
+    Gọi API với MESSAGES gồm 2 phần: system prompt và user prompt.
     """
-    # TODO: giống call_openai nhưng messages có thêm phần tử role="system"
-    raise NotImplementedError("Implement chat_with_system_prompt")
+    from openai import OpenAI
+
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+    start_time = time.time()
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    latency = time.time() - start_time
+    response_text = response.choices[0].message.content or ""
+    return response_text, latency
 
 
 # ---------------------------------------------------------------------------
@@ -167,25 +158,14 @@ def chat_with_system_prompt(
 def count_tokens(text: str, model: str = OPENAI_MODEL) -> int:
     """
     Đếm số token của một đoạn text bằng thư viện tiktoken.
-
-    Args:
-        text:  Đoạn text cần đếm.
-        model: Model dùng để chọn bộ mã hóa (encoding).
-
-    Returns:
-        Số token (int).
-
-    Gợi ý:
+    """
+    try:
         import tiktoken
+
         enc = tiktoken.encoding_for_model(model)
         return len(enc.encode(text))
-
-        tiktoken cần tải bộ mã hóa từ mạng ở lần chạy đầu. Hãy bọc trong
-        try/except — nếu lỗi (offline, model lạ), dùng ước lượng dự phòng:
-        max(1, len(text) // 4)   (trung bình 1 token ≈ 4 ký tự)
-    """
-    # TODO: dùng tiktoken để đếm token, có fallback khi lỗi
-    raise NotImplementedError("Implement count_tokens")
+    except Exception:
+        return max(1, len(text) // 4)
 
 
 # ---------------------------------------------------------------------------
@@ -193,26 +173,25 @@ def count_tokens(text: str, model: str = OPENAI_MODEL) -> int:
 # ---------------------------------------------------------------------------
 def estimate_cost(prompt: str, response: str, model: str = OPENAI_MODEL) -> dict:
     """
-    Tính chi phí một lượt gọi API dựa trên số token THẬT (đếm bằng
-    count_tokens) và bảng giá PRICING_PER_1K_TOKENS — tách riêng chi phí
-    input (prompt) và output (response).
-
-    Returns:
-        Dict với các key:
-            - "prompt_tokens":  int
-            - "completion_tokens": int
-            - "prompt_cost":    float  (USD)
-            - "completion_cost":   float  (USD)
-            - "total_cost":    float  (USD)
-
-    Gợi ý:
-        pricing = PRICING_PER_1K_TOKENS.get(model, PRICING_PER_1K_TOKENS["gpt-4o"])
-        prompt_cost = prompt_tokens / 1000 * pricing["input"]
-        (.get với fallback: model không có trong bảng giá — ví dụ model NIM
-         miễn phí — thì lấy giá gpt-4o làm tham chiếu học tập)
+    Tính chi phí một lượt gọi API dựa trên số token THẬT.
     """
-    # TODO: đếm token prompt/response, tra bảng giá, trả về dict 5 key
-    raise NotImplementedError("Implement estimate_cost")
+    pricing = PRICING_PER_1K_TOKENS.get(
+        model, PRICING_PER_1K_TOKENS["gpt-4o"]
+    )
+    prompt_tokens = count_tokens(prompt, model)
+    completion_tokens = count_tokens(response, model)
+
+    prompt_cost = (prompt_tokens / 1000) * pricing["input"]
+    completion_cost = (completion_tokens / 1000) * pricing["output"]
+    total_cost = prompt_cost + completion_cost
+
+    return {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "prompt_cost": prompt_cost,
+        "completion_cost": completion_cost,
+        "total_cost": total_cost,
+    }
 
 
 # ===========================================================================
