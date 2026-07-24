@@ -18,6 +18,8 @@ from typing import Any, Callable
 # Vietnamese text generally consumes ~1.5x - 2.0x more tokens than English due to Unicode/diacritics.
 # ---------------------------------------------------------------------------
 PRICING_1M_TOKENS = {
+    "gpt-3.5-turbo": {"input": 1.50, "output": 2.00},
+    "gpt-3.5": {"input": 1.50, "output": 2.00},
     "gpt-4o": {"input": 5.00, "output": 20.00},
     "gpt-4o-mini": {"input": 0.150, "output": 0.600},
     "gemini-2.5-flash": {"input": 0.075, "output": 0.300},
@@ -27,8 +29,8 @@ PRICING_1M_TOKENS = {
 }
 
 # Standard Model Identifiers
-OPENAI_MODEL = "gpt-4o"
-OPENAI_MINI_MODEL = "gpt-4o-mini"
+OPENAI_MODEL = "gpt-3.5-turbo"
+OPENAI_MINI_MODEL = "gpt-3.5-turbo"
 GEMINI_MODEL = "gemini-2.5-flash"
 ANTHROPIC_MODEL = "claude-3-5-haiku"
 

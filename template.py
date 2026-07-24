@@ -25,6 +25,8 @@ load_dotenv()
 # Bảng giá ước tính (USD / 1K token) — cập nhật nếu giá thay đổi
 # ---------------------------------------------------------------------------
 PRICING_PER_1K_TOKENS = {
+    "gpt-3.5-turbo": {"input": 0.0015, "output": 0.0020},
+    "gpt-3.5": {"input": 0.0015, "output": 0.0020},
     "gpt-4o": {"input": 0.0025, "output": 0.010},
     "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
     "gemini-2.5-flash": {"input": 0.0003, "output": 0.0025},
@@ -34,8 +36,8 @@ PRICING_PER_1K_TOKENS = {
 # Luồng chính: OpenAI (mặc định, không cần đặt gì trong .env).
 # Không có key OpenAI? Dùng luồng thay thế Google Gemini (Phụ lục B
 # trong LAB_GUIDE.md) — tên model đổi qua .env. NVIDIA NIM: Phụ lục C.
-OPENAI_MODEL = os.getenv("LAB_MODEL", "gpt-4o")
-OPENAI_MINI_MODEL = os.getenv("LAB_MINI_MODEL", "gpt-4o-mini")
+OPENAI_MODEL = os.getenv("LAB_MODEL", "gpt-3.5-turbo")
+OPENAI_MINI_MODEL = os.getenv("LAB_MINI_MODEL", "gpt-3.5-turbo")
 
 
 # ===========================================================================
